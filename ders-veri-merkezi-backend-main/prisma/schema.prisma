@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  name          String
+  email         String     @unique
+  password_hash String
+  role          String     @default("STUDENT") // ADMIN, ACADEMICIAN, STUDENT
+  created_at    DateTime   @default(now())
+  
+  courses       Course[]   @relation("AcademicianCourses")
+  documents     Document[] @relation("UploadedDocuments")
+}
+
+model Course {
+  id             Int        @id @default(autoincrement())
+  course_code    String     @unique
+  course_name    String
+  academician    User       @relation("AcademicianCourses", fields: [academician_id], references: [id])
+  academician_id Int
+  documents      Document[]
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  title       String
+  file_url    String
+  file_type   String   // PDF, DOCX, ZIP
+  course      Course   @relation(fields: [course_id], references: [id])
+  course_id   Int
+  uploader    User     @relation("UploadedDocuments", fields: [uploaded_by], references: [id])
+  uploaded_by Int
+  
+  logs        AccessLog[]
+}
+
+model AccessLog {
+  id            Int      @id @default(autoincrement())
+  document      Document @relation(fields: [document_id], references: [id])
+  document_id   Int
+  source        String   // WEB, MOBILE, BOT
+  downloaded_at DateTime @default(now())
+}
